@@ -1,3 +1,5 @@
+import json
+
 from flask import Flask, redirect, url_for, session, request, Response, jsonify
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -37,7 +39,8 @@ def authorize():
 def callback():
     flow.fetch_token(authorization_response=request.url)
     credentials = flow.credentials
-    session['credentials'] = credentials_to_dict(credentials)
+    credentials_json = credentials.to_json(strip=['expiry',])
+    session['credentials'] = json.loads(credentials_json)
     return redirect(url_for('read_emails'))
 
 
@@ -66,17 +69,6 @@ def read_emails():
         return Response(response= '\n'.join(subjects), status=200, content_type='text/plain; charset=utf-8')
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-def credentials_to_dict(credentials):
-    return {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes
-    }
 
 
 if __name__ == '__main__':
